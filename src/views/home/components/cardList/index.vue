@@ -15,14 +15,78 @@
     </div>
 
     <div class="MessageCardList">
-      <MessageCard v-for="item in 10" :key="item" />
+      <MessageCard v-for="item in num" :key="item" />
     </div>
+
+    <div class="sentinel" ref="sentinel"></div>
+    <div ref="loading" class="loading" v-show="isLoading"></div>
+    <div class="loadingText" v-if="loadComplete">加载完成。。。。</div>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { cardType } from '@/utils/list'
+import pathLoading from '@/assets/lottie/loading.json'
 import MessageCard from '@/components/messageCard/index.vue'
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import lottie from 'lottie-web'
+let observe: IntersectionObserver
+const sentinel = ref(null)
+const loading = ref<Element>()
+const isLoading = ref<boolean>(true)
+const loadComplete = ref<boolean>(false)
+const num = ref<number>(0)
+const getScroll = () => {
+  observe = new IntersectionObserver(
+    entries => {
+      const [entry] = entries
+      if (entry.isIntersecting) {
+        isLoading.value = true
+        current.value++
+        console.log(current.value)
+        // getCardList()
+      }
+    },
+    {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    }
+  )
+
+  if (sentinel.value) {
+    observe.observe(sentinel.value)
+  }
+}
+
+const loadingAnimation = () => {
+  nextTick(() => {
+    lottie.loadAnimation({
+      container: loading.value as Element,
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      animationData: pathLoading as unknown as string
+    })
+  })
+}
+const current = ref<number>(1)
+const pageSize = ref<number>(20)
+
+const getCardList = async () => {
+  setTimeout(() => {
+    num.value += 10
+  }, 2000)
+}
+
+onMounted(() => {
+  loadingAnimation()
+  getScroll()
+  getCardList()
+})
+
+onBeforeUnmount(() => {
+  observe.disconnect()
+})
 
 const currentIndex = ref(0)
 </script>
@@ -55,6 +119,17 @@ const currentIndex = ref(0)
     display: flex;
     flex-wrap: wrap;
     margin-top: 20px;
+  }
+
+  .loading {
+    width: 50px;
+    margin: 0 auto;
+  }
+
+  .loadingText {
+    width: 150px;
+    margin: 0 auto;
+    text-align: center;
   }
 }
 </style>
